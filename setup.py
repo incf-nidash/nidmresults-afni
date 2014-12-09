@@ -10,15 +10,15 @@ requirements = [
 ]
 
 setup(
-    name = "nidmfsl",
+    name = "nidmafni",
     version = "0.1.0",
-    author = "Camille Maumet",
+    author = "Camille Maumet, Rick Reynolds",
     author_email = "c.m.j.maumet@warwick.ac.uk",
-    description = ("Export of FSL statistical results using NIDM"
+    description = ("Export of AFNI statistical results using NIDM"
         " as specified at http://nidm.nidash.org/specs/nidm-results.html."),
     license = "BSD",
     keywords = "Prov, NIDM, Provenance",
-    scripts=['bin/nidm-results_fsl'],
+    scripts=['bin/nidm-results_afni'],
     # packages=['nidmfsl', 'test'],
     packages=find_packages(),
     package_dir={
