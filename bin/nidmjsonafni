@@ -6,7 +6,8 @@ DC code convergence
 """
 import json
 import sys
-from subprocess import check_call
+from subprocess import check_call, check_output
+from collections import OrderedDict
 
 # nidmjsonafni ttest++_result+tlrc.BRIK
 
@@ -24,40 +25,63 @@ if __name__ == "__main__":
     resbrik = args[0]
     print(resbrik)
 
-    nidm = {}
-    nidm['NeuroimagingAnalysisSoftware_type'] = "AFNI"
-    # Is the version of AFNI that was used for the analysis stored somwhere?
-    nidm['NeuroimagingAnalysisSoftware_softwareVersion'] = "TODO"
-    # TODO rethink in NIDM
-    # nidm['nidm_grandMeanScaling']
-    nidm['nidm_targetIntensity'] = 100
-    nidm['DesignMatrix_atLocation'] = "TODO"
-    nidm['DesignMatrix_regressorNames'] = ["group"]
+    nidm = OrderedDict()
+    nidm['NeuroimagingAnalysisSoftware'] = {
+        "type": "AFNI",
+        # Is the version of AFNI that was used for the analysis stored somwhere?
+        "softwareVersion": "TODO"
+    }
+
+    nidm['Data'] = {
+        # TODO rethink in NIDM
+        'grandMeanScaling': True,
+        'targetIntensity': 100        
+    }
+
+    nidm['DesignMatrix'] = {
+        'atLocation': "TODO",
+        'regressorNames': ["group"]
+    }
 
     check_call([
         # 3dAFNItoNIFTI -prefix <NAME> <RES_BRIK>[0]
         '3dAFNItoNIFTI', '-prefix', 'ParameterEstimate', resbrik + '[0]'])
-    nidm['ParameterEstimateMaps'] = ["ParameterEstimate.nii"]
-    nidm['ErrorModel_hasErrorDistribution'] = "obo_NormalDistribution"
-    nidm['ErrorModel_errorVarianceHomogeneous'] = True
-    # TODO:  check
-    nidm['ErrorModel_varianceMapWiseDependence'] = "nidm_IndependentParameter"
-    nidm['ErrorModel_hasErrorDependence'] = "nidm_IndependentError"
-    nidm['ErrorModel_depemdenceMapWiseDependence'] = \
-        "nidm_IndependentParameter"
-    nidm['ModelParameterEstimation_withEstimationMethod'] = \
-        "obo_OrdinaryLeastSquaresEstimation"
+    nidm['ParameterEstimateMap'] = {
+        'atLocation': "ParameterEstimate.nii"
+    }
+
+    nidm['ErrorModel'] = {
+        'hasErrorDistribution': "obo_NormalDistribution",
+        'errorVarianceHomogeneous': True,
+        # TODO:  check
+        'varianceMapWiseDependence': "nidm:IndependentParameter",
+        'hasErrorDependence': "nidm:IndependentError",
+        'depemdenceMapWiseDependence': "nidm_IndependentParameter"        
+    }
+
+
+    nidm['ModelParameterEstimation'] = {
+        'withEstimationMethod': "obo_OrdinaryLeastSquaresEstimation"
+    }
 
     # TODO residualmeansquares
-    nidm['ResidualMeanSquaresMap_atLocation'] = "TODO"
+    nidm['ResidualMeanSquaresMap'] = {
+        'atLocation': "TODO"
+    }
     # TODO GrandMeanMap --> not needed
-    nidm['GrandMeanMap_atLocation'] = "TODO"
+    nidm['GrandMeanMap'] = {
+        'atLocation': "TODO"
+    }
 
     # TODO MaskMap_atLocation
-    nidm['MaskMap_atLocation'] = "TODO"
+    nidm['MaskMap'] = {
+        'atLocation': "TODO"
+    }
 
     # TODO CoordinateSpace_inWorldCoordinateSystem
-    nidm['CoordinateSpace_inWorldCoordinateSystem'] = "TODO"
+    nidm['CoordinateSpace'] = {
+        'inWorldCoordinateSystem': "TODO"
+    }
 
     nidm['Contrasts'] = []
     check_call([
@@ -67,13 +91,20 @@ if __name__ == "__main__":
         # 3dAFNItoNIFTI -prefix <NAME> <RES_BRIK>[1]
         '3dAFNItoNIFTI', '-prefix', 'TStatistic', resbrik + '[1]'])
 
+
+    # degrees of freedom
+    stat_args = check_output([
+        # 3dAttribute BRICK_STATAUX ttest++_result+tlrc
+        '3dAttribute', 'BRICK_STATAUX', resbrik])
+    dof = int(stat_args.split()[-1])
+
     nidm['Contrasts'].append({
             # TODO: do we want specific names?
             "StatisticMap_contrastName": "group",
             "ContrastWeightMatrix_value": [1],
             "StatisticMap_statisticType": "obo_TStatistic",
             # degrees of freedom
-            "StatisticMap_errorDegreesOfFreedom": "TODO",
+            "StatisticMap_errorDegreesOfFreedom": dof,
             "StatisticMap_atLocation": "TStatistic.nii",
             # TODO inworldcoordsyst
             "StatisticMap_inWorldCoordinateSystem": "TODO",
