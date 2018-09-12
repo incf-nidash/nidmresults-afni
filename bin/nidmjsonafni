@@ -115,12 +115,21 @@ if __name__ == "__main__":
             # TODO ContrastStandardErrorMap_atLocation
             "ContrastStandardErrorMap_atLocation": "TODO"
         })
-    # TODO connectivity criterion
-    nidm['ClusterDefinitionCriteria_hasConnectivityCriterion'] = "TODO"
+
+    CONN_DICT = {
+        '1': 6,
+        '2': 18,
+        '3': 26
+    }
+
+    nidm['ClusterDefinitionCriteria_hasConnectivityCriterion'] = \
+        CONN_DICT[args.NN]
     # TODO PeakDefinitionCriteria_minDistanceBetweenPeaks
-    nidm['PeakDefinitionCriteria_minDistanceBetweenPeaks'] = "TODO"
+    nidm['PeakDefinitionCriteria_minDistanceBetweenPeaks'] = 2
     # TODO PeakDefinitionCriteria_maxNumberOfPeaksPerCluster
-    nidm['PeakDefinitionCriteria_maxNumberOfPeaksPerCluster'] = "TODO"
+    nidm['PeakDefinitionCriteria_maxNumberOfPeaksPerCluster'] = 2
+
+    print(json.dumps(nidm, indent=2))
 
     # Keep only arguments that were defined
     defined_args = {'-' + k: v for k, v in args._get_kwargs() if v is not None}
