@@ -8,22 +8,41 @@ import json
 import sys
 from subprocess import check_call, check_output
 from collections import OrderedDict
+import argparse
+import itertools
 
 # nidmjsonafni ttest++_result+tlrc.BRIK
 
 if __name__ == "__main__":
-    # Remove first argument (script name)
-    num_args = len(sys.argv)-1
-    sys.argv.pop(0)
-    args = sys.argv
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('-inset')
+    parser.add_argument('-mask')
+    parser.add_argument('-mask_from_hdr')
+    parser.add_argument('-out_mask')
+    parser.add_argument('-ithr')
+    parser.add_argument('-idat')
+    parser.add_argument('-1sided', nargs=2)
+    parser.add_argument('-2sided')
+    parser.add_argument('-bisided')
+    parser.add_argument('-within_range')
+    parser.add_argument('-NN')
+    parser.add_argument('-clust_nvox')
+    parser.add_argument('-clust_vol')
+    parser.add_argument('-pref_map')
+    parser.add_argument('-pref_dat')
+    parser.add_argument('-1Dformat')
+    parser.add_argument('-no_1Dformat')
+    parser.add_argument('-summarize')
+    parser.add_argument('-nosum')
+    parser.add_argument('-quiet')
+    parser.add_argument('-outvol_if_no_clust')
+    parser.add_argument('-orient')
+    parser.add_argument('-noabs')
+    parser.add_argument('-binary')
 
-    usage = "Usage: nidmafni path/to/feat/dir"
+    args = parser.parse_args()
 
-    if num_args != 1:
-        raise Exception(usage)
-
-    resbrik = args[0]
-    print(resbrik)
+    resbrik = args.inset
 
     nidm = OrderedDict()
     nidm['NeuroimagingAnalysisSoftware'] = {
@@ -62,6 +81,7 @@ if __name__ == "__main__":
 
     nidm['ModelParameterEstimation'] = {
         'withEstimationMethod': "obo_OrdinaryLeastSquaresEstimation"
+        # 'used': 
     }
 
     # TODO residualmeansquares
@@ -121,4 +141,18 @@ if __name__ == "__main__":
     # TODO PeakDefinitionCriteria_maxNumberOfPeaksPerCluster
     nidm['PeakDefinitionCriteria_maxNumberOfPeaksPerCluster'] = "TODO"
 
-    print(json.dumps(nidm, indent=4))
+    # Keep only arguments that were defined
+    defined_args = {'-' + k: v for k, v in args._get_kwargs() if v is not None}
+    # Transform into flat list with all defined key value pairs
+    defined_args = list(itertools.chain(*defined_args.items()))
+    # Flatten any list (multi value arguments)
+    # TODO: could this be done with simpler syntax
+    dargs = list()
+    for aa in defined_args:
+        if isinstance(aa, list):
+            dargs.extend(aa)
+        else:
+            dargs.append(aa)
+
+    print(['3dClusterize'] + dargs)
+    check_call(['3dClusterize'] + dargs)
