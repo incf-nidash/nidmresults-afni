@@ -45,63 +45,44 @@ if __name__ == "__main__":
     resbrik = args.inset
 
     nidm = OrderedDict()
-    nidm['NeuroimagingAnalysisSoftware'] = {
-        "type": "AFNI",
-        # Is the version of AFNI that was used for the analysis stored somwhere?
-        "softwareVersion": "TODO"
-    }
+    nidm['NeuroimagingAnalysisSoftware_type'] = "AFNI"
 
-    nidm['Data'] = {
-        # TODO rethink in NIDM
-        'grandMeanScaling': True,
-        'targetIntensity': 100        
-    }
+    ver = check_output([
+        # afni --version
+        'afni', '--version'])
+    nidm['NeuroimagingAnalysisSoftware_softwareVersion'] = ver
 
-    nidm['DesignMatrix'] = {
-        'atLocation': "TODO",
-        'regressorNames': ["group"]
-    }
+    # TODO rethink in NIDM
+    nidm['Data_grandMeanScaling'] = True
+    nidm['Data_targetIntensity'] = 100
+
+    # TODO design matrix
+    nidm['DesignMatrix_atLocation'] = "TODO"
+    nidm['DesignMatrix_regressorNames'] = ["group"]
 
     check_call([
         # 3dAFNItoNIFTI -prefix <NAME> <RES_BRIK>[0]
         '3dAFNItoNIFTI', '-prefix', 'ParameterEstimate', resbrik + '[0]'])
-    nidm['ParameterEstimateMap'] = {
-        'atLocation': "ParameterEstimate.nii"
-    }
 
-    nidm['ErrorModel'] = {
-        'hasErrorDistribution': "obo_NormalDistribution",
-        'errorVarianceHomogeneous': True,
-        # TODO:  check
-        'varianceMapWiseDependence': "nidm:IndependentParameter",
-        'hasErrorDependence': "nidm:IndependentError",
-        'depemdenceMapWiseDependence': "nidm_IndependentParameter"        
-    }
+    nidm['ParameterEstimateMaps'] = ["ParameterEstimate.nii"]
 
+    nidm['ErrorModel_hasErrorDistribution'] = "obo_NormalDistribution"
+    nidm['ErrorModel_errorVarianceHomogeneous'] = True
+    # TODO: check
+    nidm['ErrorModel_varianceMapWiseDependence'] = "nidm:IndependentParameter"
+    nidm['ErrorModel_hasErrorDependence'] = "nidm:IndependentError"
+    nidm['ErrorModel_depemdenceMapWiseDependence'] = "nidm_IndependentParameter"
 
-    nidm['ModelParameterEstimation'] = {
-        'withEstimationMethod': "obo_OrdinaryLeastSquaresEstimation"
-        # 'used': 
-    }
+    nidm['ModelParameterEstimation_withEstimationMethod'] = "obo_OrdinaryLeastSquaresEstimation"
 
     # TODO residualmeansquares
-    nidm['ResidualMeanSquaresMap'] = {
-        'atLocation': "TODO"
-    }
+    nidm['ResidualMeanSquaresMap_atLocation'] = "TODO"
     # TODO GrandMeanMap --> not needed
-    nidm['GrandMeanMap'] = {
-        'atLocation': "TODO"
-    }
-
-    # TODO MaskMap_atLocation
-    nidm['MaskMap'] = {
-        'atLocation': args.mask
-    }
+    nidm['GrandMeanMap_atLocation'] = "TODO"
+    nidm['MaskMap_atLocation'] = args.mask
 
     # TODO CoordinateSpace_inWorldCoordinateSystem
-    nidm['CoordinateSpace'] = {
-        'inWorldCoordinateSystem': "TODO"
-    }
+    nidm['CoordinateSpace_inWorldCoordinateSystem'] = "TODO"
 
     nidm['Contrasts'] = []
     check_call([
