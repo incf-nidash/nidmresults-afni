@@ -95,7 +95,7 @@ if __name__ == "__main__":
 
     # TODO MaskMap_atLocation
     nidm['MaskMap'] = {
-        'atLocation': "TODO"
+        'atLocation': args.mask
     }
 
     # TODO CoordinateSpace_inWorldCoordinateSystem
