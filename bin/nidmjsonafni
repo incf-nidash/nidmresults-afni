@@ -5,11 +5,13 @@ Export neuroimaging results created with FSL feat following NIDM-Results
 DC code convergence
 """
 import json
+import os
 import sys
 from subprocess import check_call, check_output
 from collections import OrderedDict
 import argparse
 import itertools
+from nidmresults.graph import *
 
 # nidmjsonafni ttest++_result+tlrc.BRIK
 
@@ -45,53 +47,58 @@ if __name__ == "__main__":
     resbrik = args.inset
 
     nidm = OrderedDict()
+    nidm['NIDMResults_version'] = '1.3.0'
+    nidm['NIDMResultsExporter_type'] = 'nidmresults-afni'
+    nidm['NIDMResultsExporter_softwareVersion'] = '0.0.1'
+
     nidm['NeuroimagingAnalysisSoftware_type'] = "AFNI"
+    nidm['ImagingInstrument_type'] = 'nlx_MagneticResonanceImagingScanner'
 
     ver = check_output([
         # afni --version
         'afni', '--version'])
-    nidm['NeuroimagingAnalysisSoftware_softwareVersion'] = ver
+    nidm['NeuroimagingAnalysisSoftware_softwareVersion'] = str(ver)
 
     # TODO rethink in NIDM
     nidm['Data_grandMeanScaling'] = True
     nidm['Data_targetIntensity'] = 100
 
     # TODO design matrix
-    nidm['DesignMatrix_atLocation'] = "TODO"
+    nidm['DesignMatrix_atLocation'] = "DesignMatrix.csv"
     nidm['DesignMatrix_regressorNames'] = ["group"]
 
     check_call([
         # 3dAFNItoNIFTI -prefix <NAME> <RES_BRIK>[0]
-        '3dAFNItoNIFTI', '-prefix', 'ParameterEstimate', resbrik + '[0]'])
+        '3dAFNItoNIFTI', '-prefix', 'ParameterEstimate.nii.gz', resbrik + '[0]'])
 
-    nidm['ParameterEstimateMaps'] = ["ParameterEstimate.nii"]
+    nidm['ParameterEstimateMaps'] = ["ParameterEstimate.nii.gz"]
 
     nidm['ErrorModel_hasErrorDistribution'] = "obo_NormalDistribution"
     nidm['ErrorModel_errorVarianceHomogeneous'] = True
     # TODO: check
-    nidm['ErrorModel_varianceMapWiseDependence'] = "nidm:IndependentParameter"
-    nidm['ErrorModel_hasErrorDependence'] = "nidm:IndependentError"
-    nidm['ErrorModel_depemdenceMapWiseDependence'] = "nidm_IndependentParameter"
+    nidm['ErrorModel_varianceMapWiseDependence'] = "nidm_IndependentParameter"
+    nidm['ErrorModel_hasErrorDependence'] = "nidm_IndependentParameter"
+    nidm['ErrorModel_dependenceMapWiseDependence'] = "nidm_IndependentParameter"
 
     nidm['ModelParameterEstimation_withEstimationMethod'] = "obo_OrdinaryLeastSquaresEstimation"
 
     # TODO residualmeansquares --> for this 3dttest++ must be run with the -resid option
-    nidm['ResidualMeanSquaresMap_atLocation'] = "TODO"
+    nidm['ResidualMeanSquaresMap_atLocation'] = args.mask # "TODO"
 
     # TODO GrandMeanMap --> not needed --> 3dClac -expression 100
-    nidm['GrandMeanMap_atLocation'] = "TODO"
+    nidm['GrandMeanMap_atLocation'] = args.mask # "TODO"
     nidm['MaskMap_atLocation'] = args.mask
 
     # TODO CoordinateSpace_inWorldCoordinateSystem
-    nidm['CoordinateSpace_inWorldCoordinateSystem'] = "TODO"
+    nidm['CoordinateSpace_inWorldCoordinateSystem'] = "MNICoordinateSystem"
 
     nidm['Contrasts'] = []
     check_call([
         # 3dAFNItoNIFTI -prefix <NAME> <RES_BRIK>[0]
-        '3dAFNItoNIFTI', '-prefix', 'Contrast', resbrik + '[0]'])
+        '3dAFNItoNIFTI', '-prefix', 'Contrast.nii.gz', resbrik + '[0]'])
     check_call([
         # 3dAFNItoNIFTI -prefix <NAME> <RES_BRIK>[1]
-        '3dAFNItoNIFTI', '-prefix', 'TStatistic', resbrik + '[1]'])
+        '3dAFNItoNIFTI', '-prefix', 'TStatistic.nii.gz', resbrik + '[1]'])
 
 
     # degrees of freedom
@@ -107,14 +114,14 @@ if __name__ == "__main__":
             "StatisticMap_statisticType": "obo_TStatistic",
             # degrees of freedom
             "StatisticMap_errorDegreesOfFreedom": dof,
-            "StatisticMap_atLocation": "TStatistic.nii",
+            "StatisticMap_atLocation": "TStatistic.nii.gz",
             # TODO inworldcoordsyst
-            "StatisticMap_inWorldCoordinateSystem": "TODO",
-            "ContrastMap_atLocation": "Contrast.nii",
+            "StatisticMap_inWorldCoordinateSystem": "MNICoordinateSystem", # TODO
+            "ContrastMap_atLocation": "Contrast.nii.gz",
             # TODO inworldcoordsyst
-            "ContrastMap_inWorldCoordinateSystem": "TODO",
+            "ContrastMap_inWorldCoordinateSystem": "MNICoordinateSystem", #TODO
             # TODO ContrastStandardErrorMap_atLocation
-            "ContrastStandardErrorMap_atLocation": "TODO"
+            "ContrastStandardErrorMap_atLocation": args.mask
         })
 
     CONN_DICT = {
@@ -140,15 +147,71 @@ if __name__ == "__main__":
     nidm['Inferences'][0]["Inference_hasAlternativeHypothesis"] = "nidm_OneTailedTest"
     nidm['Inferences'][0]["StatisticMap_contrastName"] = "group"
     nidm['Inferences'][0]["SearchSpaceMaskMap_atLocation"] = args.mask
-    nidm['Inferences'][0]["ExcursionSetMap_atLocation"] = args.pref_dat
-    nidm['Inferences'][0]["ClusterLabelsMap_atLocation"] = args.pref_map
+    nidm['Inferences'][0]["ExcursionSetMap_atLocation"] = args.pref_dat + '.nii.gz'
+    nidm['Inferences'][0]["ClusterLabelsMap_atLocation"] = args.pref_map + '.nii.gz'
     
     # CM -> center of mass
     # min/max is a bounding box on the cluster
 
+    nidm['Inferences'][0]["Clusters"] = list()
+    nidm['Inferences'][0]["Clusters"].append(dict())
+    nidm['Inferences'][0]["Clusters"][0] = {
+        "SupraThresholdCluster_clusterSizeInVoxels": 37,
+        "SupraThresholdCluster_clusterSizeInResels": 0.2783889246953182,
+        "SupraThresholdCluster_pValueUncorrected": 0.004979532475540043,
+        "SupraThresholdCluster_pValueFWER": 0.0002553840091309434,
+        "SupraThresholdCluster_qValueFDR": 0.008299220792566739,
+    }
 
-    #     "SearchSpaceMaskMap_searchVolumeInVoxels": 69306,
-    #     "SearchSpaceMaskMap_searchVolumeInUnits": 1871262,
+    nidm['Inferences'][0]["Clusters"][0]['Peaks'] = dict()
+    nidm['Inferences'][0]["Clusters"][0]['Peaks'] = {
+        "Peak_value": 6.557459354400635,
+        "Coordinate_coordinateVector": [36,-28,-13],
+        "Peak_pValueUncorrected": 2.10478867668229e-09,
+        "Peak_equivalentZStatistic": 5.875740336992659,
+        "Peak_pValueFWER": 9.175743025868766e-05,
+        "Peak_qValueFDR": 0.002576053966466678
+    }
+
+    # # Harcoded for now
+    #  {
+                
+                
+    #         },
+    #         {
+    #             "SupraThresholdCluster_clusterSizeInVoxels": 29,
+    #             "SupraThresholdCluster_clusterSizeInResels": 0.2181967247611954,
+    #             "SupraThresholdCluster_pValueUncorrected": 0.01102570321047734,
+    #             "SupraThresholdCluster_pValueFWER": 0.0005653847503775955,
+    #             "SupraThresholdCluster_qValueFDR": 0.01378212901309668,
+    #             "Peaks": {
+    #                 "Peak_value": 6.195584774017334,
+    #                 "Coordinate_coordinateVector": [-33,-31,-16],
+    #                 "Peak_pValueUncorrected": 1.032591323557597e-08,
+    #                 "Peak_equivalentZStatistic": 5.606450280165436,
+    #                 "Peak_pValueFWER": 0.0003824539073036259,
+    #                 "Peak_qValueFDR": 0.009491545229817806
+    #             }
+    #         },
+    #         {
+    #             "SupraThresholdCluster_clusterSizeInVoxels": 12,
+    #             "SupraThresholdCluster_clusterSizeInResels": 0.09028829990118428,
+    #             "SupraThresholdCluster_pValueUncorrected": 0.08183931845143072,
+    #             "SupraThresholdCluster_pValueFWER": 0.004189009772489038,
+    #             "SupraThresholdCluster_qValueFDR": 0.08183931845143072,
+    #             "Peaks": {
+    #                 "Peak_value": 5.273201942443848,
+    #                 "Coordinate_coordinateVector": [45,-40,32],
+    #                 "Peak_pValueUncorrected": 5.123862998335227e-07,
+    #                 "Peak_equivalentZStatistic": 4.886820854904772,
+    #                 "Peak_pValueFWER": 0.0119099090973821,
+    #                 "Peak_qValueFDR": 0.2515542547177581
+    #             }
+    #         }
+
+
+    nidm['Inferences'][0]["SearchSpaceMaskMap_searchVolumeInVoxels"] = 69306
+    nidm['Inferences'][0]["SearchSpaceMaskMap_searchVolumeInUnits"] = 1871262
     #     "SearchSpaceMaskMap_reselSizeInVoxels": 132.907586178202,
     #     "SearchSpaceMaskMap_searchVolumeInResels": 467.0764234388099,
     #     "SearchSpaceMaskMap_searchVolumeReselsGeometry": [7,42.96312274763005,269.40914815306,467.0764234388099],
@@ -260,7 +323,10 @@ if __name__ == "__main__":
     #         }
     #     ]
     # }
-    print(json.dumps(nidm, indent=2))
+    
+    # with file.read('w') as fid:
+    #     fid.write(json.dumps(nidm, indent=2))
+
 
     # Keep only arguments that were defined
     defined_args = {'-' + k: v for k, v in args._get_kwargs() if v is not None}
@@ -281,3 +347,23 @@ if __name__ == "__main__":
     out = check_output(['3dClusterize'] + dargs + ['>', 'clusters'])
     print('----------------------')
     print(out)
+
+
+    check_call([
+        # 3dAFNItoNIFTI -prefix <NAME> <RES_BRIK>[0]
+        '3dAFNItoNIFTI', '-prefix', 'ExcursionSetMap.nii.gz', args.pref_dat + '+tlrc[0]'])
+    check_call([
+        # 3dAFNItoNIFTI -prefix <NAME> <RES_BRIK>[0]
+        '3dAFNItoNIFTI', '-prefix', 'ClusterLabelsMap.nii.gz', args.pref_map + '+tlrc[0]'])
+
+    json_file = 'nidm_from_afni.json'
+    with open(json_file, "w") as fid:
+        fid.write(json.dumps(nidm, indent=4))
+
+    nidmresjson = NIDMResults(json_file=json_file, prepend_path=os.getcwd())
+
+    # Rewrite the NIDM pack
+    new_name = os.path.join('afni_study')
+    nidmresjson.serialize(new_name)
+    print('Serialised to ' + new_name)
+    print("----")
