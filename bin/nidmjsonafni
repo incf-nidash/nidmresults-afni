@@ -75,9 +75,10 @@ if __name__ == "__main__":
 
     nidm['ModelParameterEstimation_withEstimationMethod'] = "obo_OrdinaryLeastSquaresEstimation"
 
-    # TODO residualmeansquares
+    # TODO residualmeansquares --> for this 3dttest++ must be run with the -resid option
     nidm['ResidualMeanSquaresMap_atLocation'] = "TODO"
-    # TODO GrandMeanMap --> not needed
+
+    # TODO GrandMeanMap --> not needed --> 3dClac -expression 100
     nidm['GrandMeanMap_atLocation'] = "TODO"
     nidm['MaskMap_atLocation'] = args.mask
 
@@ -124,10 +125,8 @@ if __name__ == "__main__":
 
     nidm['ClusterDefinitionCriteria_hasConnectivityCriterion'] = \
         CONN_DICT[args.NN]
-    # TODO PeakDefinitionCriteria_minDistanceBetweenPeaks
-    nidm['PeakDefinitionCriteria_minDistanceBetweenPeaks'] = 2
-    # TODO PeakDefinitionCriteria_maxNumberOfPeaksPerCluster
-    nidm['PeakDefinitionCriteria_maxNumberOfPeaksPerCluster'] = 2
+    nidm['PeakDefinitionCriteria_minDistanceBetweenPeaks'] = 0
+    nidm['PeakDefinitionCriteria_maxNumberOfPeaksPerCluster'] = 1
 
     # TODO: we might want to retreive info from 3dClustSim rather than setting
     # thresholds to stat values.
@@ -144,7 +143,8 @@ if __name__ == "__main__":
     nidm['Inferences'][0]["ExcursionSetMap_atLocation"] = args.pref_dat
     nidm['Inferences'][0]["ClusterLabelsMap_atLocation"] = args.pref_map
     
-    
+    # CM -> center of mass
+    # min/max is a bounding box on the cluster
 
 
     #     "SearchSpaceMaskMap_searchVolumeInVoxels": 69306,
@@ -178,22 +178,6 @@ if __name__ == "__main__":
     #                     "Peak_pValueFWER": 0,
     #                     "Peak_qValueFDR": 1.191565917138381e-11
     #                 },
-    #                 {
-    #                     "Peak_value": 13.03214073181152,
-    #                     "Coordinate_coordinateVector": [-42,-31,11],
-    #                     "Peak_pValueUncorrected": 4.440892098500626e-16,
-    #                     "Peak_equivalentZStatistic": null,
-    #                     "Peak_pValueFWER": 0,
-    #                     "Peak_qValueFDR": 1.191565917138381e-11
-    #                 },
-    #                 {
-    #                     "Peak_value": 10.28560161590576,
-    #                     "Coordinate_coordinateVector": [-66,-31,-1],
-    #                     "Peak_pValueUncorrected": 4.440892098500626e-16,
-    #                     "Peak_equivalentZStatistic": null,
-    #                     "Peak_pValueFWER": 7.69451169446711e-12,
-    #                     "Peak_qValueFDR": 6.841212602749916e-10
-    #                 }
     #             ]
     #         },
     #         {
